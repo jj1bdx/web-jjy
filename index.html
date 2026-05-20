@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Web JJY</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+      canvas {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Web JJY Simulator</h1>
+    <p>
+      Reproduces the JJY standard-time radio signal using the Web Audio API.
+      Press the <strong>Start</strong> button below to begin transmitting the signal.
+    </p>
+
+    <button id="control-button">Start</button> <span id="time"></span>
+    <div>
+      <canvas id="canvas" width="1000" height="200"></canvas>
+    </div>
+    <label><input id="summer-time" type="checkbox">Enable summer time</label>
+    <script src="jjy.js"></script>
+
+    <h2>About</h2>
+    <p>
+      Radio-controlled clocks set their time by receiving <a href="http://jjy.nict.go.jp/jjy/">JJY</a>,
+      the standard-time radio signal that broadcasts time-of-day information.
+      This simulator reproduces that signal in the browser so you can set a radio-controlled clock even in places where the real JJY broadcast does not reach.
+    </p>
+
+    <h2>Usage</h2>
+    <p>
+      Plug an antenna (an ordinary pair of earphones works fine) into your computer's headphone jack and place it near the radio-controlled clock.
+      Turn the volume up to maximum and press the <strong>Start</strong> button to begin transmitting the signal.
+      Put the clock into forced-reception mode and wait for it to pick up the time.
+    </p>
+    <p>
+      This page does not adjust the computer's own clock, so it is a good idea to sync your computer with NTP beforehand.
+    </p>
+
+    <h2>Disclaimer</h2>
+    <p>
+      No liability is accepted for any damage arising from use of this software.
+    </p>
+
+    <h2>Tested environment</h2>
+    <p>Confirmed to work with MacBook Air + Google Chrome 48.0.2564.116 + CITIZEN 8RZ152.</p>
+
+    <h2>How it works</h2>
+    <p>
+      The standard JJY signal is broadcast at 40 kHz or 60 kHz.
+      Wherever electric current flows, electromagnetic waves are produced, so feeding a signal at that frequency into a pair of earphones turns them into a serviceable antenna.
+    </p>
+    <p>
+      The catch is that ordinary audio amplifiers are not designed to reproduce frequencies above the human hearing range of about 20 kHz.
+      The workaround is to exploit the harmonics present in a distorted waveform.
+      When the volume is cranked up high enough that the sound clips, the audio signal becomes roughly a square wave.
+      A 13.333 kHz square wave contains a component at three times that frequency &mdash; 39.999 kHz &mdash; so it can radiate at roughly 40 kHz.
+      For more detail, see the <a href="http://www.starstonesoft.com/jjy_simulator.htm">JJY simulator freeware page</a> (in Japanese).
+    </p>
+
+    <h2>License</h2>
+    <p>Released under the MIT License. See <a href="https://github.com/shogo82148/web-jjy/blob/gh-pages/LICENSE.md">LICENSE.md</a>.</p>
+
+    <h2>Related links</h2>
+    <ul>
+      <li><a href="https://github.com/shogo82148/web-jjy">shogo82148/web-jjy</a></li>
+      <li><a href="https://shogo82148.github.io/blog/2016/03/29/web-jjy/">Emitting radio waves from a web browser</a> (blog post, in Japanese)</li>
+      <li><a href="https://shogo82148.github.io/blog/2018/08/11/web-jjy-summer-time-support/">Web JJY now supports summer time</a> (blog post, in Japanese)</li>
+    </ul>
+
+  </body>
+</html>
