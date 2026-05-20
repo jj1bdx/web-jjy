@@ -1,11 +1,12 @@
 // Original source:
-// https://github.com/shogo82148/web-jjy
+// https://github.com/jj1bdx/web-jjy
 // License: MIT License
-// See https://github.com/shogo82148/web-jjy/blob/gh-pages/LICENSE.md
+// See https://github.com/jj1bdx/web-jjy/LICENSE.md
 // Modified by Kenji Rikitake, JJ1BDX
 // to generate audible sine wave sounds
 
 // 27-SEP-2025: add attack/decay timing for each tone output
+// 20-MAY-2025: fix vulnerabilities using Claude Code
 
 (function() {
   "use strict";
