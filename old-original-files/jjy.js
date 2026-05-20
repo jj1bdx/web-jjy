@@ -5,12 +5,12 @@
 
     var AudioContext = window.AudioContext || window.webkitAudioContext;
 
-    // List of leap-second insertion dates (Japan time)
+    // うるう秒挿入日一覧(日本時)
     var plus_leapsecond_list = [
         new Date(2017, 0, 1, 9)
     ];
 
-    // Leap second: +1 = insertion within one month, -1 = deletion within one month
+    // うるう秒 +1:一ヶ月以内に挿入 -1:一ヶ月以内に削除
     function getleapsecond() {
         var now = Date.now();
         for(var i = 0; i < plus_leapsecond_list.length; i++) {
@@ -35,7 +35,7 @@
         var array = [];
         var leapsecond = getleapsecond();
 
-        // Emit a marker at second s of the minute.
+        // 毎分s秒の位置のマーカーを出力する
         function marker(s) {
             array.push(0.2);
             var t = s + offset;
@@ -48,10 +48,10 @@
             osc.connect(ctx.destination);
         }
 
-        // Parity bit accumulator.
+        // パリティービット
         var pa;
 
-        // Emit a bit and update the parity accumulator.
+        // bitを出力し、パリティビットを更新する
         function bit(s, value, weight) {
             var b = value >= weight;
             value -= b ? weight : 0;
@@ -68,9 +68,9 @@
             return value;
         }
 
-        marker(0); // Marker (M)
+        marker(0); // マーカー(M)
 
-        // Minute
+        // 分
         pa = 0;
         minute = bit(1, minute,  40);
         minute = bit(2, minute,  20);
@@ -84,7 +84,7 @@
 
         marker(9); // P1
 
-        // Hour
+        // 時
         pa = 0;
         hour = bit(10, hour, 80);
         hour = bit(11, hour, 40);
@@ -99,7 +99,7 @@
 
         marker(19); // P2
 
-        // Day of year (counted from January 1)
+        // 1月1日からの通算日
         year_day = bit(20, year_day, 800);
         year_day = bit(21, year_day, 400);
         year_day = bit(22, year_day, 200);
@@ -129,11 +129,11 @@
         if (summer_time) {
             bit(40, 1, 1);
         } else {
-            // Summer time in effect (no change from summer time to standard time within 6 days)
+            // 夏時間実施中（６日以内に夏時間から通常時間への変更なし）
             bit(40, 0, 1);
         }
 
-        // Year
+        // 年
         year = bit(41, year, 80);
         year = bit(42, year, 40);
         year = bit(43, year, 20);
@@ -145,22 +145,22 @@
 
         marker(49); // P5
 
-        // Day of week
+        // 曜日
         week_day = bit(50, week_day, 4);
         week_day = bit(51, week_day, 2);
         week_day = bit(52, week_day, 1);
 
-        // Leap second
+        // うるう秒
         if (leapsecond === 0) {
-            // No leap second
+            // うるう秒なし
             bit(53, 0, 1); // 0
             bit(54, 0, 1); // 0
         } else if (leapsecond > 0) {
-            // Positive leap second
+            // 正のうるう秒
             bit(53, 1, 1); // 1
             bit(54, 1, 1); // 1
         } else {
-            // Negative leap second
+            // 負のうるう秒
             bit(53, 1, 1); // 1
             bit(54, 0, 1); // 0
         }
@@ -183,14 +183,14 @@
         var now = Date.now();
         var t = Math.floor(now / (60 * 1000)) * 60 * 1000;
         var next = t + 60 * 1000;
-        var delay = next - now - 1000; // Set the timer slightly before the exact 0-second mark of each minute.
+        var delay = next - now - 1000; // 毎分0秒ピッタリの少し前にタイマーをセットする
         if (delay < 0) {
             t = next;
             delay += 60 * 1000;
         }
         signal = schedule(new Date(t), summer_time_input.checked);
 
-        // HACK: stash the timeout id so it can be canceled before it fires.
+        // HACK: timeout発火前にキャンセルする
         intervalId = setTimeout(function() {
             interval();
             intervalId = setInterval(interval, 60 * 1000);
