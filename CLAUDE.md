@@ -25,8 +25,10 @@ The default branch **is** `gh-pages` — this repository serves GitHub Pages dir
 
 Two files do all the work:
 
-- `index.html` — UI shell: Start/Stop button, summer-time checkbox, canvas, and Japanese explanatory copy. Loads `jjy.js`.
+- `index.html` — UI shell: Start/Stop button, summer-time checkbox, canvas, and explanatory copy. Loads `jjy.js`.
 - `jjy.js` — Entire IIFE; everything below lives here.
+
+A third file, `jjy-audible.js`, is a parallel variant of `jjy.js` (see "Audible variant" below). It is **not loaded by `index.html`**; to use it, change the `<script src>` in `index.html`.
 
 ### Signal generation (`schedule()` in jjy.js)
 
@@ -58,3 +60,15 @@ JJY broadcasts one frame per minute, one symbol per second (60 symbols, indices 
 ### Visualizer (`render()`)
 
 A `requestAnimationFrame` loop reads the most recent `signal` array produced by `schedule()` and draws each second as a colored bar (red = marker, yellow = 1, green = 0; bright = current second, dim = others). Two rows of 30 columns. The visualizer reflects only the most recently scheduled minute, so during minute rollover it briefly shows the upcoming minute's data, not the one currently airing.
+
+### Audible variant (`jjy-audible.js`)
+
+A derivative of `jjy.js` by Kenji Rikitake (JJ1BDX) that produces a **listenable** rendering of the JJY frame rather than an antenna-driving signal. The frame layout, parity computation, scheduling loop, `stop()`, and visualizer are identical to `jjy.js`. Differences worth knowing:
+
+- **Carrier**: `freq = 1000` Hz, `osc.type = "sine"` (commented-out `square`). This is for the ear, not for a clock — it will **not** drive a radio-controlled clock.
+- **Envelope**: each tone runs through a `GainNode` with `ramptime = 0.008` s linear attack and decay, scheduled via `setValueAtTime` / `linearRampToValueAtTime`. This kills the click/pop that `jjy.js` produces by hard-starting and hard-stopping each oscillator.
+- **Summer-time input is disconnected**: the `summer_time_input` declaration and the `summer_time_input.checked` reads in `schedule()` calls are commented out; both `schedule()` calls pass `false`. The HTML checkbox is therefore ignored when this variant is loaded.
+- **First-minute alignment HACK**: in addition to the regular "schedule next minute one second early" `setTimeout`, there is a second `setTimeout` (`firstIntervalId`) that fires the very first `schedule()` after the sub-second remainder of `delay` (`delay - floor(delay/1000)*1000`). The author left a `TODO: must investigate why this works` — treat the mechanism as load-bearing-but-not-yet-explained when editing.
+- **Parity initialization**: `pa` is initialized to `0` at the top of `schedule()` (defensive; the original relied on `pa = 0` being set before the first `bit()` call).
+
+The 27-SEP-2025 dated comment at the top of the file documents when the attack/decay envelope was added. Keep that header (origin, MIT license, modifier, date) intact when editing.

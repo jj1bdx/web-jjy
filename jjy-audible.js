@@ -8,6 +8,7 @@
 // 27-SEP-2025: add attack/decay timing for each tone output
 
 (function() {
+  "use strict";
   // make sound frequency really audible
   var freq = 1000;
   var ctx;
@@ -15,7 +16,12 @@
 
   var AudioContext = window.AudioContext || window.webkitAudioContext;
 
-  // Leap second insersion list in Japan Standard Time
+  // Leap second insersion list in Japan Standard Time.
+  // Note: negative leap seconds are NOT supported by this implementation.
+  // There is intentionally no minus_leapsecond_list; the encoder branch for
+  // a negative leap second (LS1=1, LS2=0) is therefore unreachable. The IERS
+  // has never announced a negative leap second, so this remains a theoretical
+  // case in the JJY frame specification.
   var plus_leapsecond_list = [
     new Date(2017, 0, 1, 9)
   ];
@@ -57,7 +63,9 @@
       var bittime = 0.2;
       array.push(bittime);
       var t = s + offset;
-      if (t < 0) return;
+      if (t < 0) {
+        return;
+      }
       var osc = ctx.createOscillator();
       var gain = ctx.createGain();
       gain.gain.value = 0;
@@ -81,7 +89,9 @@
       pa += b ? 1 : 0;
       array.push(bittime);
       var t = s + offset;
-      if (t < 0) return value;
+      if (t < 0) {
+        return value;
+      }
       var osc = ctx.createOscillator();
       var gain = ctx.createGain();
       gain.gain.value = 0;
@@ -224,12 +234,20 @@
     return array;
   }
 
-  var intervalId;
+  var setupTimeoutId;
+  var tickIntervalId;
   // var summer_time_input = document.getElementById("summer-time")
   var firstIntervalId;
 
   function start() {
-    ctx = new AudioContext();
+    try {
+      ctx = new AudioContext();
+    } catch (e) {
+      control_button.innerText = "Start";
+      play_flag = false;
+      alert("Audio could not be started: " + e.message);
+      return;
+    }
     var now = Date.now();
     var t = Math.floor(now / (60 * 1000)) * 60 * 1000;
     var next = t + 60 * 1000;
@@ -246,13 +264,17 @@
     // to align the starting time
     // TODO: must investigate why this works
     firstIntervalId = setTimeout(function() {
+      // Defense-in-depth: stop() may have closed ctx between scheduling and firing.
+      if (!ctx) {
+        return;
+      }
       signal = schedule(new Date(t), false);
     }, (delay - (Math.trunc(delay / 1000) * 1000)));
 
     // HACK: cancel before timeout is ignited
-    intervalId = setTimeout(function() {
+    setupTimeoutId = setTimeout(function() {
       interval();
-      intervalId = setInterval(interval, 60 * 1000);
+      tickIntervalId = setInterval(interval, 60 * 1000);
     }, delay);
 
     function interval() {
@@ -263,9 +285,17 @@
   }
 
   function stop() {
-    if (intervalId) {
-      clearInterval(intervalId);
-      intervalId = null;
+    if (firstIntervalId) {
+      clearTimeout(firstIntervalId);
+      firstIntervalId = null;
+    }
+    if (setupTimeoutId) {
+      clearTimeout(setupTimeoutId);
+      setupTimeoutId = null;
+    }
+    if (tickIntervalId) {
+      clearInterval(tickIntervalId);
+      tickIntervalId = null;
     }
     if (ctx) {
       ctx.close();
@@ -275,6 +305,9 @@
   }
 
   var control_button = document.getElementById("control-button");
+  if (!control_button) {
+    return;
+  }
   var play_flag = false;
 
   control_button.addEventListener('click', function() {
@@ -290,7 +323,13 @@
   });
 
   var nowtime = document.getElementById('time');
+  if (!nowtime) {
+    return;
+  }
   var canvas = document.getElementById('canvas');
+  if (!canvas) {
+    return;
+  }
   var ctx2d = canvas.getContext('2d');
   var w = canvas.width;
   var h = canvas.height;
@@ -310,13 +349,21 @@
 
     for (i = 0; i < signal.length; i++) {
       if (i == now) {
-        if (signal[i] < 0.3) ctx2d.fillStyle = "#FF0000";
-        else if (signal[i] < 0.7) ctx2d.fillStyle = "#FFFF00";
-        else ctx2d.fillStyle = "#00FF00";
+        if (signal[i] < 0.3) {
+          ctx2d.fillStyle = "#FF0000";
+        } else if (signal[i] < 0.7) {
+          ctx2d.fillStyle = "#FFFF00";
+        } else {
+          ctx2d.fillStyle = "#00FF00";
+        }
       } else {
-        if (signal[i] < 0.3) ctx2d.fillStyle = "#7F0000";
-        else if (signal[i] < 0.7) ctx2d.fillStyle = "#7F7F00";
-        else ctx2d.fillStyle = "#007F00";
+        if (signal[i] < 0.3) {
+          ctx2d.fillStyle = "#7F0000";
+        } else if (signal[i] < 0.7) {
+          ctx2d.fillStyle = "#7F7F00";
+        } else {
+          ctx2d.fillStyle = "#007F00";
+        }
       }
       ctx2d.fillRect((i % 30) * 30, Math.floor(i / 30) * 100, 30 * signal[i], 80);
     }
